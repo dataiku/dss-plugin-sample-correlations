@@ -15,36 +15,38 @@ import dataiku
 # Import the helpers for custom recipes
 from dataiku.customrecipe import *
 
-# Inputs and outputs are defined by roles. In the recipe's I/O tab, the user can associate one
-# or more dataset to each input and output role.
-# Roles need to be defined in recipe.json, in the inputRoles and outputRoles fields.
+    "inputRoles" : [
+        {
+            "name": "input",
+            "label": "Input dataset",
+            "description": "The dataset containing the raw data from which we'll compute correlations.",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true
+        }
+    ],
 
-# To  retrieve the datasets of an input role named 'input_A' as an array of dataset names:
-input_A_names = get_input_names_for_role('input_A_role')
-# The dataset objects themselves can then be created like this:
-input_A_datasets = [dataiku.Dataset(name) for name in input_A_names]
+    "outputRoles" : [
+        {
+            "name": "main_output",
+            "label": "Output dataset",
+            "description": "The dataset containing the correlations.",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true
+        }
+    ],
 
-# For outputs, the process is the same:
-output_A_names = get_output_names_for_role('main_output')
-output_A_datasets = [dataiku.Dataset(name) for name in output_A_names]
-
-
-# The configuration consists of the parameters set up by the user in the recipe Settings tab.
-
-# Parameters must be added to the recipe.json file so that DSS can prompt the user for values in
-# the Settings tab of the recipe. The field "params" holds a list of all the params for wich the
-# user will be prompted for values.
-
-# The configuration is simply a map of parameters, and retrieving the value of one of them is simply:
-my_variable = get_recipe_config()['parameter_name']
-
-# For optional parameters, you should provide a default value in case the parameter is not present:
-my_variable = get_recipe_config().get('parameter_name', None)
-
-# Note about typing:
-# The configuration of the recipe is passed through a JSON object
-# As such, INT parameters of the recipe are received in the get_recipe_config() dict as a Python float.
-# If you absolutely require a Python int, use int(get_recipe_config()["my_int_param"])
+          "params": [
+      {
+          "name": "threshold",
+          "label" : "Threshold for showing a correlation",
+          "type": "DOUBLE",
+          "defaultValue" : 0.5,
+          "description":"Correlations below the threshold will not appear in the output dataset",
+          "mandatory" : true
+      }
+  ],
 
 
 #############################
@@ -55,39 +57,30 @@ my_variable = get_recipe_config().get('parameter_name', None)
 import dataiku
 import pandas as pd, numpy as np
 from dataiku import pandasutils as pdu
+from compute_corr import *
+
+# Retrieve array of dataset names from 'input' role, then create datasets
+input_names = get_input_names_for_role('input')
+input_datasets = [dataiku.Dataset(name) for name in input_names]
+
+# For outputs, the process is the same:
+output_names = get_output_names_for_role('main_output')
+output_datasets = [dataiku.Dataset(name) for name in output_names]
+
+# Retrieve parameter values from the of map of parameters
+threshold = get_recipe_config()['threshold']
+
 
 # Read recipe inputs
-wine_quality = dataiku.Dataset("wine_quality")
-wine_quality_df = wine_quality.get_dataframe()
+input_dataset = input_datasets[0]
+df = input_dataset.get_dataframe()
+column_names = df.columns
 
-def compute_pairs(df):
-    # We'll only compute correlations on numerical columns
-    # So extract all pairs of names of numerical columns
-    pairs = []
-    column_names = df.columns
-    for i in xrange(0, len(column_names)):
-        for j in xrange(i + 1, len(column_names)):
-            col1 = column_names[i]
-            col2 = column_names[j]
-            if df[col1].dtype == "float64" and \
-               df[col2].dtype == "float64":
-                pairs.append((col1, col2))
-    return pairs
 
-def compute_corr(df):
-    # Compute the correlation for each pair, and write a
-    # row in the output array
-    output = []
-    pairs = compute_pairs(df)
-    for pair in pairs:
-        corr = df[[pair[0], pair[1]]].corr().iloc[0][1]
-        output.append({"col0" : pair[0],
-                       "col1" : pair[1],
-                       "corr" :  corr})
-    return output
 
-output = compute_corr(wine_quality_df)
+output = compute_corr(df, threshold)
 
-# Write recipe outputs
-output_dataset =  dataiku.Dataset("wine_correlations")
+
+# Write the output to the output dataset
+output_dataset =  output_datasets[0]
 output_dataset.write_with_schema(pd.DataFrame(output))
