@@ -57,7 +57,7 @@ from dataiku.customrecipe import *
 import dataiku
 import pandas as pd, numpy as np
 from dataiku import pandasutils as pdu
-from compute_corr
+from compute_corr import *
 
 # Retrieve array of dataset names from 'input' role, then create datasets
 input_names = get_input_names_for_role('input')
