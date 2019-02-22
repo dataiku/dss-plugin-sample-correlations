@@ -15,39 +15,6 @@ import dataiku
 # Import the helpers for custom recipes
 from dataiku.customrecipe import *
 
-    "inputRoles" : [
-        {
-            "name": "input",
-            "label": "Input dataset",
-            "description": "The dataset containing the raw data from which we'll compute correlations.",
-            "arity": "UNARY",
-            "required": true,
-            "acceptsDataset": true
-        }
-    ],
-
-    "outputRoles" : [
-        {
-            "name": "main_output",
-            "label": "Output dataset",
-            "description": "The dataset containing the correlations.",
-            "arity": "UNARY",
-            "required": true,
-            "acceptsDataset": true
-        }
-    ],
-
-          "params": [
-      {
-          "name": "threshold",
-          "label" : "Threshold for showing a correlation",
-          "type": "DOUBLE",
-          "defaultValue" : 0.5,
-          "description":"Correlations below the threshold will not appear in the output dataset",
-          "mandatory" : true
-      }
-  ],
-
 
 #############################
 # Your original recipe
