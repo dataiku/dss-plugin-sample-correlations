@@ -1,5 +1,5 @@
 {
-    "id": "dss-plugin-sample-correlation",
+    "id": "sample-correlations",
     "version": "0.0.1",
     "meta": {
         "label": "Compute correlations",
